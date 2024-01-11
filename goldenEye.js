@@ -4,15 +4,25 @@ Game.registerMod("Golden Eye", {
       Game.shimmers.forEach((element) => {
         if (element.ident === undefined) {
           element.ident = nextID++;
-          element.l.style.zIndex = 50;
-          Game.attachTooltip(
-            element.l,
-            (function (element) {
-              return function () {
-                return getForecastHTML(popPredict(element));
-              };
-            })(element)
-          );
+          if (element.type === "golden") {
+            Game.attachTooltip(
+              element.l,
+              (function (element) {
+                return function () {
+                  return getForecastHTML(popPredict(element));
+                };
+              })(element)
+            );
+          } else if (element.type === "reindeer") {
+            Game.attachTooltip(
+              element.l,
+              (function (element) {
+                return function () {
+                  return getForecastHTML(popPredictReindeer(element));
+                };
+              })(element)
+            );
+          }
         }
       });
     });
@@ -75,6 +85,7 @@ function getForecastHTML(foresight) {
     "chain cookie",
     "cookie storm",
     "cookie storm drop",
+    "hohoho",
   ];
   const outcasts = [
     "building debuff",
@@ -88,27 +99,30 @@ function getForecastHTML(foresight) {
     foresight.power,
     foresight.obj
   )?.name;
-  let description = Game.buffTypesByName[foresight.effect]?.func(foresight.duration, foresight.power, foresight.obj)?.desc;
+  let description = Game.buffTypesByName[foresight.effect]?.func(
+    foresight.duration,
+    foresight.power,
+    foresight.obj
+  )?.desc;
 
   if (foresight.effect === "free sugar lump") {
     description = "Sweet!";
     formalName = "Free Sugar Lump";
-  }
-  if (foresight.effect === "cookie storm drop") {
+  } else if (foresight.effect === "cookie storm drop") {
     description = `Will earn you ${LBeautify(foresight.amount).b} cookies.`;
     formalName = "Cookie Storm Drop";
-  }
-  if (foresight.effect === "blab") {
+  } else if (foresight.effect === "blab") {
     description = foresight.blab;
-    formalName = 'Blab!'
-  }
-  if (foresight.effect === "ruin cookies") {
+    formalName = "Blab!";
+  } else if (foresight.effect === "ruin cookies") {
     description = `Will lose you ${LBeautify(foresight.amount).b} cookies.`;
     formalName = "Ruin";
-  }
-  if (foresight.effect === "multiply cookies") {
+  } else if (foresight.effect === "multiply cookies") {
     description = `Will earn you ${LBeautify(foresight.amount).b} cookies.`;
     formalName = "Lucky";
+  } else if (foresight.effect === "hohoho") {
+    description = `Will earn you ${LBeautify(foresight.amount).b} cookies.`;
+    formalName = foresight.obj;
   }
 
   let notesHTML = "",
@@ -178,7 +192,7 @@ function chooseBetter(arr, ind, shimmer) {
 }
 
 Game.shimmerTypes.golden.popFunc = function (me) {
-  if(me.l.matches(':hover')) Game.tooltip.shouldHide = 1;
+  if (me.l.matches(":hover")) Game.tooltip.shouldHide = 1;
   //get achievs and stats
   if (me.spawnLead) {
     Game.goldenClicks++;
@@ -490,6 +504,77 @@ Game.shimmerTypes.golden.popFunc = function (me) {
   me.die();
 };
 
+Game.shimmerTypes.reindeer.popFunc = function (me) {
+  //get achievs and stats
+  if (me.spawnLead) {
+    Game.reindeerClicked++;
+  }
+
+  var val = Game.cookiesPs * 60;
+  if (Game.hasBuff("Elder frenzy")) val *= 0.5; //very sorry
+  if (Game.hasBuff("Frenzy")) val *= 0.75; //I sincerely apologize
+  var moni = Math.max(25, val); //1 minute of cookie production, or 25 cookies - whichever is highest
+  if (Game.Has("Ho ho ho-flavored frosting")) moni *= 2;
+  moni *= Game.eff("reindeerGain");
+  Game.Earn(moni);
+  if (Game.hasBuff("Elder frenzy")) Game.Win("Eldeer");
+
+  var cookie = "";
+  var failRate = 0.8;
+  if (Game.HasAchiev("Let it snow")) failRate = 0.6;
+  failRate *= 1 / Game.dropRateMult();
+  if (Game.Has("Starsnow")) failRate *= 0.95;
+  if (Game.hasGod) {
+    var godLvl = Game.hasGod("seasons");
+    if (godLvl == 1) failRate *= 0.9;
+    else if (godLvl == 2) failRate *= 0.95;
+    else if (godLvl == 3) failRate *= 0.97;
+  }
+  if (getRandom(0, me) > failRate) {
+    //christmas cookie drops
+    cookie = chooseBetter(
+      [
+        "Christmas tree biscuits",
+        "Snowflake biscuits",
+        "Snowman biscuits",
+        "Holly biscuits",
+        "Candy cane biscuits",
+        "Bell biscuits",
+        "Present biscuits",
+      ],
+      50,
+      me
+    );
+    if (!Game.HasUnlocked(cookie) && !Game.Has(cookie)) {
+      Game.Unlock(cookie);
+    } else cookie = "";
+  }
+
+  var popup = "";
+
+  Game.Notify(
+    loc("You found %1!", chooseBetter(loc("Reindeer names"), 51, me)),
+    loc("The reindeer gives you %1.", loc("%1 cookie", LBeautify(moni))) +
+      (cookie == ""
+        ? ""
+        : "<br>" +
+          loc("You are also rewarded with %1!", Game.Upgrades[cookie].dname)),
+    [12, 9],
+    6
+  );
+  popup =
+    '<div style="font-size:80%;">' +
+    loc("+%1!", loc("%1 cookie", LBeautify(moni))) +
+    "</div>";
+
+  if (popup != "") Game.Popup(popup, Game.mouseX, Game.mouseY);
+
+  //sparkle and kill the shimmer
+  Game.SparkleAt(Game.mouseX, Game.mouseY);
+  PlaySound("snd/jingleClick.mp3");
+  me.die();
+};
+
 function popPredict(me) {
   const foresight = new Foresight();
   //get achievs and stats
@@ -758,5 +843,63 @@ function popPredict(me) {
   }
 
   Game.DropEgg(0.9);
+  return foresight;
+}
+
+function popPredictReindeer(me) {
+  const foresight = new Foresight();
+  //get achievs and stats
+  if (me.spawnLead) {
+    const newClicked = Game.reindeerClicked + 1;
+    foresight.achievs.push("Oh deer");
+    if (newClicked >= 50) foresight.achievs.push("Sleigh of hand");
+    if (newClicked >= 200) foresight.achievs.push("Reindeer sleigher");
+  }
+
+  var val = Game.cookiesPs * 60;
+  if (Game.hasBuff("Elder frenzy")) val *= 0.5; //very sorry
+  if (Game.hasBuff("Frenzy")) val *= 0.75; //I sincerely apologize
+  var moni = Math.max(25, val); //1 minute of cookie production, or 25 cookies - whichever is highest
+  if (Game.Has("Ho ho ho-flavored frosting")) moni *= 2;
+  moni *= Game.eff("reindeerGain");
+  foresight.amount = moni;
+  if (Game.hasBuff("Elder frenzy")) foresight.achievs.push("Eldeer");
+
+  foresight.achievs = foresight.achievs.filter(
+    (achiev) => !Game.Achievements[achiev].won
+  );
+
+  var cookie = "";
+  var failRate = 0.8;
+  if (Game.HasAchiev("Let it snow")) failRate = 0.6;
+  failRate *= 1 / Game.dropRateMult();
+  if (Game.Has("Starsnow")) failRate *= 0.95;
+  if (Game.hasGod) {
+    var godLvl = Game.hasGod("seasons");
+    if (godLvl == 1) failRate *= 0.9;
+    else if (godLvl == 2) failRate *= 0.95;
+    else if (godLvl == 3) failRate *= 0.97;
+  }
+  if (getRandom(0, me) > failRate) {
+    //christmas cookie drops
+    cookie = chooseBetter(
+      [
+        "Christmas tree biscuits",
+        "Snowflake biscuits",
+        "Snowman biscuits",
+        "Holly biscuits",
+        "Candy cane biscuits",
+        "Bell biscuits",
+        "Present biscuits",
+      ],
+      50,
+      me
+    );
+    if (!Game.HasUnlocked(cookie) && !Game.Has(cookie)) {
+      foresight.unlocks.push(cookie);
+    } else cookie = "";
+  }
+  foresight.effect = "hohoho";
+  foresight.obj = chooseBetter(loc("Reindeer names"), 51, me);
   return foresight;
 }
