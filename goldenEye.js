@@ -88,11 +88,7 @@ function getForecastHTML(foresight) {
     foresight.power,
     foresight.obj
   )?.name;
-  let description = Game.buffTypesByName[foresight.effect]?.func(
-    foresight.duration,
-    foresight.power,
-    foresight.obj
-  )?.desc;
+  let description = Game.buffTypesByName[foresight.effect]?.func(foresight.duration, foresight.power, foresight.obj)?.desc;
 
   if (foresight.effect === "free sugar lump") {
     description = "Sweet!";
@@ -104,7 +100,7 @@ function getForecastHTML(foresight) {
   }
   if (foresight.effect === "blab") {
     description = foresight.blab;
-    formalName = "Blab!";
+    formalName = 'Blab!'
   }
   if (foresight.effect === "ruin cookies") {
     description = `Will lose you ${LBeautify(foresight.amount).b} cookies.`;
@@ -182,7 +178,7 @@ function chooseBetter(arr, ind, shimmer) {
 }
 
 Game.shimmerTypes.golden.popFunc = function (me) {
-  if (me.l.matches(":hover")) Game.tooltip.shouldHide = 1;
+  if(me.l.matches(':hover')) Game.tooltip.shouldHide = 1;
   //get achievs and stats
   if (me.spawnLead) {
     Game.goldenClicks++;
