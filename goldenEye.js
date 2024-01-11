@@ -159,7 +159,7 @@ function getForecastHTML(foresight) {
       : outcasts.includes(foresight.effect)
       ? 'class="red"'
       : ""
-  }>Effect: ${formalName}</div>
+  }>${foresight.effect === 'hohoho' ? '': 'Effect: '}${formalName}</div>
   <div class="line"></div>
   <div class="description">
       <div style="margin: 6px 0px; font-weight: bold">${description}</div>
