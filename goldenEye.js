@@ -51,6 +51,38 @@ class Foresight {
 
 let nextID = 0;
 
+function DropEggBetter(failRate, shimmer) {
+  failRate *= 1 / Game.dropRateMult();
+  if (Game.season != "easter") return;
+  if (Game.HasAchiev("Hide & seek champion")) failRate *= 0.7;
+  if (Game.Has("Omelette")) failRate *= 0.9;
+  if (Game.Has("Starspawn")) failRate *= 0.9;
+  if (Game.hasGod) {
+    var godLvl = Game.hasGod("seasons");
+    if (godLvl == 1) failRate *= 0.9;
+    else if (godLvl == 2) failRate *= 0.95;
+    else if (godLvl == 3) failRate *= 0.97;
+  }
+  if (getRandom(100, shimmer) >= failRate) {
+    var drop = "";
+    if (getRandom(101, shimmer) < 0.1) drop = chooseBetter(Game.rareEggDrops, 102, shimmer);
+    else drop = chooseBetter(Game.eggDrops, 103, shimmer);
+    if (Game.Has(drop) || Game.HasUnlocked(drop)) {
+      //reroll if we have it
+      if (getRandom(104, shimmer) < 0.1) drop = chooseBetter(Game.rareEggDrops, 105, shimmer);
+      else drop = choose(Game.eggDrops);
+    }
+    if (Game.Has(drop) || Game.HasUnlocked(drop)) return;
+    Game.Unlock(drop);
+    Game.Notify(
+      loc("You found an egg!"),
+      "<b>" + drop + "</b>",
+      Game.Upgrades[drop].icon
+    );
+  }
+};
+
+
 function getForecastHTML(foresight) {
   /*
   Possible things:
@@ -488,7 +520,7 @@ Game.shimmerTypes.golden.popFunc = function (me) {
     popup = buff.dname + '<div style="font-size:65%;">' + buff.desc + "</div>";
   if (popup != "") Game.Popup(popup, me.x + me.l.offsetWidth / 2, me.y);
 
-  Game.DropEggBetter(0.9, me);
+  DropEggBetter(0.9, me);
 
   //sparkle and kill the shimmer
   Game.SparkleAt(me.x + 48, me.y + 48);
@@ -929,36 +961,5 @@ function eggPredict(failRate, shimmer) {
     }
     if (Game.Has(drop) || Game.HasUnlocked(drop)) return
     return drop;
-  }
-};
-
-function DropEggBetter(failRate, shimmer) {
-  failRate *= 1 / Game.dropRateMult();
-  if (Game.season != "easter") return;
-  if (Game.HasAchiev("Hide & seek champion")) failRate *= 0.7;
-  if (Game.Has("Omelette")) failRate *= 0.9;
-  if (Game.Has("Starspawn")) failRate *= 0.9;
-  if (Game.hasGod) {
-    var godLvl = Game.hasGod("seasons");
-    if (godLvl == 1) failRate *= 0.9;
-    else if (godLvl == 2) failRate *= 0.95;
-    else if (godLvl == 3) failRate *= 0.97;
-  }
-  if (getRandom(100, shimmer) >= failRate) {
-    var drop = "";
-    if (getRandom(101, shimmer) < 0.1) drop = chooseBetter(Game.rareEggDrops, 102, shimmer);
-    else drop = chooseBetter(Game.eggDrops, 103, shimmer);
-    if (Game.Has(drop) || Game.HasUnlocked(drop)) {
-      //reroll if we have it
-      if (getRandom(104, shimmer) < 0.1) drop = chooseBetter(Game.rareEggDrops, 105, shimmer);
-      else drop = choose(Game.eggDrops);
-    }
-    if (Game.Has(drop) || Game.HasUnlocked(drop)) return;
-    Game.Unlock(drop);
-    Game.Notify(
-      loc("You found an egg!"),
-      "<b>" + drop + "</b>",
-      Game.Upgrades[drop].icon
-    );
   }
 };
