@@ -505,6 +505,7 @@ Game.shimmerTypes.golden.popFunc = function (me) {
 };
 
 Game.shimmerTypes.reindeer.popFunc = function (me) {
+  if (me.l.matches(":hover")) Game.tooltip.shouldHide = 1;
   //get achievs and stats
   if (me.spawnLead) {
     Game.reindeerClicked++;
